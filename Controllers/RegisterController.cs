@@ -28,18 +28,29 @@ namespace Authentication.Controllers
             {
                 return BadRequest("Invalid User Data");
             }
-            var password = user.Password;
-            try
+
+            var presented_user = await dbcontext.Users
+                .FirstOrDefaultAsync(u => u.Email == user.Email);
+            if (presented_user==null)
             {
-                user.Password = BCrypt.Net.BCrypt.HashPassword(password);
-                dbcontext.Users.Add(user);
-                await dbcontext.SaveChangesAsync();
-                return Ok("User saved successfully!");
+                var password = user.Password;
+                try
+                {
+                    user.Password = BCrypt.Net.BCrypt.HashPassword(password);
+                    dbcontext.Users.Add(user);
+                    await dbcontext.SaveChangesAsync();
+                    return Ok("User saved successfully!");
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, $"An error occured in saving user : {ex}");
+                }
             }
-            catch(Exception ex)
+            else
             {
-                return StatusCode(500, $"An error occured in saving user : {ex}");
+                return BadRequest("This user is already present");
             }
+            
             
         }
 
